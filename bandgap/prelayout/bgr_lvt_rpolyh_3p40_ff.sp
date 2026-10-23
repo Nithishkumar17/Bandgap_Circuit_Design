@@ -1,6 +1,6 @@
 **** bandgap reference circuit using self-biase current mirror at ff corner*****
 
-.lib "/opt/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice ff"
+.lib "/opt/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice"  ff
 
 .global vdd gnd
 .temp 27
