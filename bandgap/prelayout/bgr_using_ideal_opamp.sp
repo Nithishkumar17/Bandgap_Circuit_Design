@@ -62,8 +62,7 @@ vsup    vdd     gnd     dc      2
 
 .control
 RUN
-plot v(vdd) v(qp1) v(ra1) v(qp2) v(ref) v(qp3)
-plot v(ref)
+
 
 
 .endc

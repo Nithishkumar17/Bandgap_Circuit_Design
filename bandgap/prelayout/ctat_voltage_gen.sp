@@ -6,7 +6,7 @@
 .temp 27
 
 *** bjt definition
-xqp1	gnd	gnd	qp1	gnd	sky130_fd_pr__pnp_05v5_W3p40L3p40	m=1
+xqp1	gnd	gnd	qp1	sky130_fd_pr__pnp_05v5_W3p40L3p40	m=1
 
 *** supply voltage and current
 vsup	vdd	gnd	dc	2

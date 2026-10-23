@@ -1,6 +1,6 @@
 **** ptat voltage generation circuit *****
 
-.lib "/opt/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice tt"
+.lib "/opt/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" tt
 
 .global vdd gnd
 .temp 27
@@ -31,7 +31,7 @@ vsup	vdd	gnd	dc 	2
 *** control statement
 .control
 run
-plot v(qp1) v(ra1) v(qp2) v(net2)
+plot v(ra1)-v(qp2)
 plot vid1#branch vid2#branch
 .endc
 .end
