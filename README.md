@@ -58,7 +58,7 @@ Inference: It produced a negative slope graph as expected
 Case 2 : Constant current source and 8 BJT
 
 <p align="left">
-  <img src="Images/Case - 2 - Slope.png">
+  <img src="Images/Case 2 - Slope.png">
 </p>
 <p align="right">
   <img src="Images/Case - 2.png">
