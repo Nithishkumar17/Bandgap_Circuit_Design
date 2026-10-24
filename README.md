@@ -58,7 +58,7 @@ Inference: It produced a negative slope graph as expected
 Case 2 : Constant current source and 8 BJT
 
 <p align="left">
-  <img src="Images/Case - 2 - Slope.png.png">
+  <img src="Images/Case - 2 - Slope.png">
 </p>
 <p align="right">
   <img src="Images/Case - 2.png">
@@ -71,7 +71,7 @@ Case 3 : Variable current source and 1 BJT
   <img src="Images/Case - 3 - Slopes.png">
 </p>
 <p align="right">
-  <img src="Images/Case - 3">
+  <img src="Images/Case - 3.png">
 </p>
 
 Inference: The slopes gets more negative as the biasing current is decreased, which is similar to increase in BJT.
