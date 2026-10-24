@@ -42,7 +42,10 @@ Usually semiconductor diodes shows CTAT behaviour. If we consider constant curre
 <p align="center">
   <img src="Images/CTAT.png">
 </p>
+
+
 #### CTAT spice simulation
+
 CTAT circuit is simulated under 3 cases 
 
 Case 1 : Constant current source and 1 BJT
@@ -50,31 +53,56 @@ Case 1 : Constant current source and 1 BJT
 <p align="left">
   <img src="Images/Case - 1 - Slope.png">
 </p>
+
+
 <p align="right">
   <img src="Images/Case - 1.png">
 </p>
+
+
+
 Inference: It produced a negative slope graph as expected
 
+
+
+
 Case 2 : Constant current source and 8 BJT
+
+
 
 <p align="left">
   <img src="Images/Case 2 - Slope.png">
 </p>
+
+
 <p align="right">
   <img src="Images/Case - 2.png">
 </p>
+
+
 Inference: It produced a more negative slope graph than case 1 as current is divided among 8 BJT.
 
+
+
 Case 3 : Variable current source and 1 BJT
+
+
 
 <p align="left">
   <img src="Images/Case - 3 - Slopes.png">
 </p>
+
+
 <p align="right">
   <img src="Images/Case - 3.png">
 </p>
 
+
+
 Inference: The slopes gets more negative as the biasing current is decreased, which is similar to increase in BJT.
+
+
+
 
 #### 2.1.2 PTAT Voltage Generation
 <p align="center">
