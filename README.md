@@ -179,6 +179,16 @@ After thoroughly going through the device data sheet we selected the following d
 - To reduce channel length modulation used L=1um
 - Finally the size is **L=1u, W=5u and M=8**
 
+### 1.4 Design and Pre-layout Simulation
+For the real-time circuit design we are going to use sky130 technology PDK. Before we design the complete circuit we must know what are our design requirements. The design requirements are the design guidelines which our design must satisfy.
+
+
+
+##### 1.4.1 Final Circuit
+<p align="center">
+  <img src="Images/finalbgr.png">
+</p>
+
 
 
 ## 2. BGR Introduction
@@ -371,13 +381,4 @@ Inference
 
 
 
-## 3. Design and Pre-layout Simulation
-For the real-time circuit design we are going to use sky130 technology PDK. Before we design the complete circuit we must know what are our design requirements. The design requirements are the design guidelines which our design must satisfy.
-
-
-
-#### 3.3.1 Final Circuit
-<p align="center">
-  <img src="Images/finalbgr.png">
-</p>
 
