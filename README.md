@@ -345,13 +345,13 @@ Process corner simulations
 | tt     | 4 mV           | 1.08 V  | 22.4 |
 | ss     | 8 mV           | 1.094 V | 44.3 |
 
-![Vref vs temperature, tt corner](bandgap/Images/<your_tt_plot>.png)
+![Vref vs temperature, tt corner](Images/tt corner.png)
 *Figure 1: Vref vs temperature, tt corner.*
 
-![Vref vs temperature, ff corner](bandgap/Images/<your_ff_plot>.png)
+![Vref vs temperature, ff corner](Images/ff corner.png)
 *Figure 2: Vref vs temperature, ff corner.*
 
-![Vref vs temperature, ss corner](bandgap/Images/<your_ss_plot>.png)
+![Vref vs temperature, ss corner](Images/ss corner.png)
 *Figure 3: Vref vs temperature, ss corner.*
 
 Inference
