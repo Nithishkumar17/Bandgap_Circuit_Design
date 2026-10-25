@@ -328,7 +328,9 @@ Inference: Voltage of 1.2v is produced at the end of the circuit, which is the s
 
 Inference: The BGR based on Ideal Curve gave a accuracy of Approx 19 ppm/deg c Umbrella curve
 
+#### Non- Ideal case
 
+Ideal works fine as the input voltage is in DC mode, but in reality it is transition input. Self biased circuit are stable for 2 state in which zero current state are the most predominate state among them. In order to kick in the circuit initially a start up circuit is needed
 
 ## 3. Design and Pre-layout Simulation
 For the real-time circuit design we are going to use sky130 technology PDK. Before we design the complete circuit we must know what are our design requirements. The design requirements are the design guidelines which our design must satisfy.
