@@ -378,6 +378,44 @@ Inference
 - The nominal Vref shifts between corners, because device and resistor variation changes the bias current and the ΔVbe term.
 - The cancellation is tuned at one corner, so it is not perfect at the others. Trimming the resistor ratio or using a curvature-compensated design would reduce the spread.
 
+### Layout design
+
+Desing choice :
+
+by common center matching, to maintain symmetric alignment resistors of R1 and R2 are arranged 
+
+Rbank layout in magic
+
+<p align="center">
+  <img src="Images/rbank.png">
+</p>
+
+Note : Sometime to maintain the symmetric nature, dummy components are added 
+<p align="center">
+  <img src="Images/nfets.png">
+</p>
+<p align="center">
+  <img src="Images/pfets.png">
+</p>
+<p align="center">
+  <img src="Images/bjts.png">
+</p>
+<p align="center">
+  <img src="Images/top.png">
+</p>
+all other .mag file of nfets, pfets , bjts, top file are displayed
+
+commands to extract .ext file from .mag file
+
+extract all
+ext2sim label on
+ext2sim
+ext2spice scale off
+ext2spice hierarchy off
+ext2spice
+
+this extracts all parasitic capacitance and resistance 
+
 
 
 
