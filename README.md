@@ -12,9 +12,8 @@ Design of a **self-biased current mirror (SBCM) bandgap voltage reference** in t
 4. [Circuit Design](#4-circuit-design)
 5. [Pre-Layout Simulation](#5-pre-layout-simulation)
 6. [Layout Design](#6-layout-design)
-7. [Verification](#7-verification)
-8. [Repository Structure and How to Reproduce](#8-repository-structure-and-how-to-reproduce)
-9. [Summary](#9-summary)
+7. [Repository Structure and How to Reproduce](#7-repository-structure-and-how-to-reproduce)
+8. [Summary](#8-summary)
 
 ---
 
@@ -499,163 +498,9 @@ This writes the `.ext`, `.sim`, `.nodes` and `.spice` files.
 
 ---
 
-## 7. Verification
+## 7. Repository Structure and How to Reproduce
 
-> Replace each placeholder image below with your own screenshot. Save the screenshots in `Images/` using the file names shown, or change the names in the `<img>` tags.
-
-### 7.1 Extraction Output
-
-After `extract all` and `ext2spice` in Magic, the top cell has these files: `top.mag`, `top.ext`, `top.spice`, `top.sim` and `top.nodes`. Only `top.spice` is used for LVS and for the extracted simulation.
-
-<p align="center">
-  <img src="Images/extracted_files.png" alt="Placeholder: terminal listing of the extracted top.* files">
-</p>
-
-*Figure: extracted files of the top cell (placeholder).*
-
-### 7.2 DRC (Design Rule Check)
-
-In Magic, with the top cell loaded:
-
-```
-drc check
-drc count
-```
-
-<p align="center">
-  <img src="Images/drc_result.png" alt="Placeholder: Magic console showing the DRC count">
-</p>
-
-*Figure: DRC result of the top cell (placeholder).*
-
-| Item | Result |
-|------|--------|
-| DRC errors in `top` | *fill in* |
-
-### 7.3 LVS (Layout vs Schematic)
-
-**Inputs**
-
-| Netlist | File | Source |
-|---------|------|--------|
-| Layout | `top.spice` | Extracted from `top.mag` with `ext2spice lvs` |
-| Schematic | `top_schematic.spice` | Pre-layout BGR netlist wrapped as `.subckt top vdd gnd vref` |
-
-The schematic netlist for LVS is prepared from the simulation deck:
-
-- The `.lib`, `.global`, `.temp`, `.dc` and `.control` lines and the supply sources are removed.
-- The zero-volt current-measurement sources (`vid1` to `vid5`) are removed, and each pair of nodes is merged into one net.
-- The circuit is wrapped in `.subckt top vdd gnd vref` ... `.ends`, so the ports match the layout.
-
-<p align="center">
-  <img src="Images/lvs_schematic_netlist.png" alt="Placeholder: LVS schematic netlist top_schematic.spice">
-</p>
-
-*Figure: schematic netlist prepared for LVS (placeholder).*
-
-**Commands**
-
-```
-# In Magic: LVS-friendly netlist
-extract all
-ext2spice lvs
-ext2spice
-
-# In the terminal: compare layout and schematic
-netgen -batch lvs "top.spice top" "top_schematic.spice top" \
-  /opt/pdk/sky130A/libs.tech/netgen/sky130A_setup.tcl comp.out
-tail -30 comp.out
-```
-
-<p align="center">
-  <img src="Images/lvs_command.png" alt="Placeholder: netgen command and output in the terminal">
-</p>
-
-*Figure: netgen run (placeholder).*
-
-**Result**
-
-A passing run ends with `Circuits match uniquely`.
-
-<p align="center">
-  <img src="Images/lvs_result_match.png" alt="Placeholder: netgen result showing the circuits match">
-</p>
-
-*Figure: LVS result (placeholder).*
-
-| Check | Result |
-|-------|--------|
-| Device count (layout vs schematic) | *fill in* |
-| Net count (layout vs schematic) | *fill in* |
-| Final result | *fill in: match / mismatch* |
-
-**Points checked while preparing LVS**
-
-| Point | Observation | Resolution |
-|-------|-------------|------------|
-| Resistor bulk | The layout ties the poly-resistor bulk to `gnd` | *fill in: schematic bulk changed to `gnd`* |
-| Resistor length | Extracted `l=7.96`, schematic `l=7.8` | *fill in* |
-| Start-up pfet `xmp6` | The layout connects its source differently from the schematic | *fill in* |
-
-<p align="center">
-  <img src="Images/lvs_mismatch_fix.png" alt="Placeholder: netgen report before and after fixing a mismatch (optional)">
-</p>
-
-*Figure: mismatch report before and after the fix (optional placeholder).*
-
-### 7.4 Post-Layout Simulation
-
-The extracted `top.spice` is simulated in ngspice with a small testbench (`top_sim.sp`) that supplies power, sweeps temperature from -40 °C to 125 °C and measures the temperature coefficient:
-
-```
-.lib "/opt/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" tt
-.include "top.spice"
-
-xtop vdd vref 0 top
-vsup vdd 0 dc 2
-.dc temp -40 125 5
-```
-
-```
-ngspice top_sim.sp
-```
-
-> This netlist has no parasitic R and C unless parasitic extraction was enabled (section 6.4), so it shows the effect of the layout's device sizes only.
-
-<p align="center">
-  <img src="Images/postlayout_vref_plot.png" alt="Placeholder: Vref vs temperature from the extracted netlist">
-</p>
-
-*Figure: V<sub>ref</sub> vs temperature, extracted netlist, tt corner (placeholder).*
-
-<p align="center">
-  <img src="Images/prelayout_vs_postlayout.png" alt="Placeholder: pre-layout and post-layout Vref overlaid">
-</p>
-
-*Figure: pre-layout and post-layout V<sub>ref</sub> compared (placeholder).*
-
-| Metric (tt corner, -40 °C to 125 °C) | Pre-layout | Post-layout (extracted) |
-|--------------------------------------|------------|-------------------------|
-| V<sub>ref</sub> variation | 4 mV | *fill in* |
-| V<sub>nom</sub> | 1.08 V | *fill in* |
-| TC (ppm/°C) | 22.4 | *fill in* |
-
-**Inference:** *fill in after the simulation, for example how close the extracted result is to the pre-layout curve and what causes any difference.*
-
-### 7.5 Verification Summary
-
-| Check | Status |
-|-------|--------|
-| Extraction | Done |
-| DRC | *fill in* |
-| LVS | *fill in* |
-| Post-layout simulation | *fill in* |
-
----
-
-## 8. Repository Structure and How to Reproduce
-
-### 8.1 Repository Structure
+### 7.1 Repository Structure
 
 ```
 Bandgap_Circuit_Design/
@@ -677,7 +522,7 @@ Bandgap_Circuit_Design/
 | `bgr_lvt_rpolyh_3p40.sp`, `_ff.sp`, `_ss.sp` | Full SBCM BGR, tt / ff / ss corners |
 | `bgr_lvt_rpolyh_3p40_var_supply.sp` | Full SBCM BGR with supply variation |
 
-### 8.2 How to Reproduce
+### 7.2 How to Reproduce
 
 1. Fork this repository and open it in a **GitHub Codespace** (Code → Codespaces → Create codespace on main).
 2. In the terminal, run a simulation:
@@ -694,7 +539,7 @@ Bandgap_Circuit_Design/
 
 ---
 
-## 9. Summary
+## 8. Summary
 
 | Requirement | Target | Result |
 |-------------|--------|--------|
@@ -704,6 +549,6 @@ Bandgap_Circuit_Design/
 | Off current | < 2 µA | To be verified |
 | Start-up time | < 2 µs | To be verified |
 
-The SBCM bandgap reference meets the temperature-coefficient target in all three process corners. LVS and post-layout simulation will complete the verification.
+The SBCM bandgap reference meets the temperature-coefficient target in all three process corners in pre-layout simulation.
 
 **Reference:** VSD bandgap workshop environment, <https://github.com/vsdip/vsd-bandgap>; SkyWater sky130 PDK.
