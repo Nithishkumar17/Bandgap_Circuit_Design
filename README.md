@@ -1,422 +1,583 @@
-This github repository is for the design of a Band Gap Reference Circuit (BGR) using Google-skywater130nm technology PDK.
+# Bandgap Reference (BGR) Design in SkyWater sky130
 
-# Bandgap_Circuit_Design
-A bandgap voltage reference circuit is a voltage reference circuit widely used in integrated circuits. It produces an almost constant voltage corresponding to the particular semiconductor's theoretical band gap, with very little fluctuations from variations of power supply, electrical load, time, temperature 
+Design of a **self-biased current mirror (SBCM) bandgap voltage reference** in the Google/SkyWater **sky130** 130 nm PDK. The project covers theory, circuit design, pre-layout simulation (ideal and process corners), layout in Magic, and netlist extraction.
 
+---
 
-### Why BGR 
-- A battery is unsuitable for use as a reference voltage source.
-  - voltage drops over time
-- A typical power supply is also not suitable 
-  - noisy output and/or residual ripple.
-- A voltage reference IC used buried Zener diode, 
-  - Discrete design required additional components and high frequency filtering circuits due to higher thermal noise.
-  - Low voltage Zener  diode is not available
+## Table of Contents
 
-**Solution**
-- A Bangap reference which can be integrated in bulk CMOS, Bi-CMOS or Bipolar technologies without the use of  external components.
+1. [Introduction](#1-introduction)
+2. [Theory of Operation](#2-theory-of-operation)
+3. [Self-Biased Current Mirror BGR Architecture](#3-self-biased-current-mirror-bgr-architecture)
+4. [Circuit Design](#4-circuit-design)
+5. [Pre-Layout Simulation](#5-pre-layout-simulation)
+6. [Layout Design](#6-layout-design)
+7. [Verification](#7-verification)
+8. [Repository Structure and How to Reproduce](#8-repository-structure-and-how-to-reproduce)
+9. [Summary](#9-summary)
 
-### Features of BGR
-- Temp. independent voltage reference circuit widely used in Integrated Circuits
-- Produces constant voltage regardless of power supply variation, temp. Changes and circuit loading
-- Output voltage of 1.2v (close to the band gap energy of silicon at 0 deg kelvin)
-- All applications starting from analog, digital, mixed mode, RF and system-on-chip (SoC).
+---
 
-### Applications of BGR
-- Low dropout regulators (LDO)
+## 1. Introduction
+
+### 1.1 What is a bandgap reference?
+
+A bandgap voltage reference is a circuit widely used in integrated circuits. It produces an almost constant voltage, close to the theoretical bandgap of the semiconductor, with very little variation over supply, load, time and temperature.
+
+### 1.2 Why a BGR?
+
+- **A battery** is unsuitable as a reference, because its voltage drops over time.
+- **A typical power supply** is also unsuitable, because of noisy output and residual ripple.
+- **A buried-Zener reference IC** has drawbacks:
+  - The discrete design needs extra components and high-frequency filtering because of higher thermal noise.
+  - Low-voltage Zener diodes are not available.
+
+**Solution:** a bandgap reference can be integrated in bulk CMOS, BiCMOS or bipolar technologies without any external components.
+
+### 1.3 Features
+
+- Temperature-independent voltage reference, widely used in integrated circuits.
+- Produces a constant voltage regardless of supply variation, temperature changes and circuit loading.
+- Output voltage of about 1.2 V (close to the bandgap energy of silicon extrapolated to 0 K).
+- Used across analog, digital, mixed-signal, RF and system-on-chip (SoC) designs.
+
+### 1.4 Applications
+
+- Low-dropout regulators (LDO)
 - DC-to-DC buck converters
-- Analog-to-Digital Converter (ADC)
-- Digital-to-Analog Converter (DAC)
+- Analog-to-digital converters (ADC)
+- Digital-to-analog converters (DAC)
 
+### 1.5 Types of BGR
 
+**By architecture**
 
-###  Types of BGR
-Architecture wise BGR can be designed in two ways
+- Self-biased current mirror
+- Operational-amplifier based
 
-- Using Self-biased current mirror  
-- Using Operational-amplifier 
+**By application**
 
-Application wise BGR can be categorized as
 - Low-voltage BGR
 - Low-power BGR
 - High-PSRR and low-noise BGR
-- Curvature compensated BGR
+- Curvature-compensated BGR
 
-We are going to design our BGR circuit using Self-biased current mirror architecture.
+This project uses the **self-biased current mirror** architecture.
 
-###  Self-biased current mirror based BGR
+### 1.6 Tools and Environment
 
-The Self-biased current mirror based constitute of the following components.
+| Tool | Version | Purpose |
+|------|---------|---------|
+| Magic | 8.3.685 | Layout and DRC |
+| Ngspice | 47+ | Circuit simulation |
+| Netgen | 1.5.324 | LVS |
+| PDK | sky130A | `/opt/pdk/sky130A/` |
+| Platform | GitHub Codespaces (Ubuntu 22.04, noVNC desktop) | Development environment |
 
-- CTAT voltage generation circuit
-- PTAT voltage generation circuit
-- Self-biased current mirror circuit
-- Reference branch circuit
-- Start-up circuit
+Based on the VSD bandgap workshop environment: <https://github.com/vsdip/vsd-bandgap>
 
-####  CTAT Voltage generation circuit
-The CTAT Voltage generation circuit consist of a BJT connected as a diode, which shows CTAT nature as explained above.
-<p align="center">
-  <img src="Images/CTAT1.png">
-</p>
+---
 
-####  PTAT Voltage generation circuit
-The PTAT Voltgae generation circuit consist of **N** BJTs connected with a series resistance. The operation principle is explained above.
-<p align="center">
-  <img src="Images/PTAT1.png">
-</p>
-
-####  Self-Biased Current Mirror Circuit
-The Self-biased current mirror is a type of current mirror which requires no external biasing. This current mirrors biases it self to the desired current value without any external current source reference. 
-<p align="center">
-  <img src="Images/currentmirror.png">
-</p>
-
-####  Reference Branch Circuit
-The reference circuit branch performs the addition of CTAT and PTAT volages and gives the final reference voltage. We are using a mirror transitor and a BJT as diode in the reference branch. By virtue of the mirror transistor in the reference branch the same amount of current flows through it as of the current mirror branches. Now from the PTAT circuit branch we are getting PTAT voltage and PTAT current. The same PTAT current is flowing in the reference branch. But the slope of PTAT voltage is much more smaller than that of slope of CTAT voltgae. In order to make increase the voltage slope we have to increase the resistance (current constant, so V increases with increase in R). Now across the high resistance we will get our constant reference voltage which is the result of CTAT Voltage + PTAT Voltage.
-<p align="center">
-  <img src="Images/refbranch1.png">
-</p>
-
-####  Start-up circuit
-The start-up circuit is required to move out the self biased current mirror from degenerative bias point (zero current). The start-up circuit forecefully flows a slow amount of current through the self-biased current mirror when the current is 0 in the current mirror branches, as the current mirror is self biased this small current creats a disturbance and the current mirror auto biased to the desired current value.
-<p align="center">
-  <img src="Images/startup.png">
-</p>
-
-#### Complete BGR Circuit
-Now by connecting all above components we can get the complete BGR circuit.
-<p align="center">
-  <img src="Images/fullbgr.png">
-</p>
-Advantages of SBCM BGR:
-
-- Simplest topology
-- Easy to design 
-- Always stable
-
-Limitations of SBCM BGR:
-
-- Low power supply rejection ratio (PSRR)
-- Cacode design needed to reduce PSRR
-- Voltage head-room issue
-- Need start-up circuit
-
-
-### 1.1 Design Requirements
-- Supply voltage = 1.8V
-- Temperature: -40 to 125 Deg Cent.
-- Power Consumption < 60uW
-- Off current < 2uA
-- Start-up time < 2us
-- Tempco. Of Vref < 50 ppm
-
-Now, we have to go through the device data sheet to find the appropriate devices for our design. 
-
-After thoroughly going through the device data sheet we selected the following devices for our design.
-### 1.2 Device Data Sheet
-***1. MOSFET***
-| Parameter | NFET | PFET |
-| :-: | :-: | :-: |
-| **Type** | LVT | LVT |
-| **Voltage** | 1.8V | 1.8V |
-| **Vt0** | ~0.4V | ~-0.6V |
-| **Model** | sky130_fd_pr__nfet_01v8_lvt | sky130_fd_pr__pfet_01v8_lvt |
-
-***2. BJT (PNP)***
-| Parameter | PNP | 
-| :-: | :-: | 
-| **Current Rating** | 1uA-10uA/um2 | 
-| **Beta** | ~12 |
-| **Vt0** | 11.56 um2 | 
-| **Model** | sky130_fd_pr__pnp_05v5_W3p40L3p40 |
-
-***3. RESISTOR (RPOLYH)***
-| Parameter | RPOLYH | 
-| :-: | :-: | 
-| **Sheet Resistance** | ~350 Ohm | 
-| **Tempco.** | 2.5 Ohm/Deg Cent |
-| **Bin Width** | 0.35u, 0.69u, 1.41u, 5.37u | 
-| **Model** | sky130_fd_pr__res_high_po |
-
-### 1.3 Circuit Design
-
-**1. Current Calculation**
-
-- Max. power Consumption < 60uW
-- Max Total Current = 60 uW/1.8V=33.33uA
-- So, we have chosen 10uA/branch, (3*10=30uA)
-- Start-up current 1-2 uA
-
-**2. Choosing Number of BJT in parallel in Branch2**
-- Less number of BJT: require less resistance value but matching hampers
-- More number of BJT: requires higher resistance value but gives good matching
-- So a moderate number have chosen (8 BJT) for better layout matching and moderate resistance value.  
-
-**3. Calculation of R1**
-- R1= Vt* ln (8)/I =26 mv *ln(8)/10.7uA=5 KOhm
-- R1 size: W=1.41um, L=7.8um, Unit res value: 2k Ohm
-- Number of resistance needed: 2 in series and 2 in parallel (2+2+(2||2))
-
-**4. Calculation of R2**
-- Current through ref branch:I3=I2=Vt*ln(8)/R1
-- Voltage across R2: R2*I3=R2/R1(Vt*ln(8))
-- Slope of VR2= R2/R1 (ln(8)*115uv)/Deg Cent.
-- Slope of VQ3=-1.6mV/Deg cent
-- Adding both and equating to zero, R2 will be around 33k Ohm
-- Number of resistance needed: 16 in series and 2 in parallel (2+2...+2+ (2||2))
-
-**5. SBCM Design (Self-biased Current Mirror)**
-
-***A. PMOS Design in SBCM***
-- Make both the MP1 and MP2 well in Saturation 
-- To reduce channel length modulation used L=2um
-- Finally the size is **L=2u, W=5u and M=4**
-
-***B. NMOS Design in SBCM***
-- Make both the MN1 and MN2 either in Saturation or in deep sub-threshold
-- We have made it in deep sub-threshold 
-- To reduce channel length modulation used L=1um
-- Finally the size is **L=1u, W=5u and M=8**
-
-### 1.4 Design and Pre-layout Simulation
-For the real-time circuit design we are going to use sky130 technology PDK. Before we design the complete circuit we must know what are our design requirements. The design requirements are the design guidelines which our design must satisfy.
-
-
-
-##### 1.4.1 Final Circuit
-<p align="center">
-  <img src="Images/finalbgr.png">
-</p>
-
-
-
-## 2. BGR Introduction
+## 2. Theory of Operation
 
 ### 2.1 BGR Principle
-The operation principle of BGR circuits is to sum a voltage with negative temprature coefficient with another one exhibiting opposite temperature dependancies. Generally semiconductor diode behave as CTAT i.e. Complement to absolute temp. which means with increase in temp. the voltage across the diode will decrease. So we need to find a PTAT circuit which can cancel out the CTAT nature i.e. with rise in temp. the voltage across that device will increase and thus we can get a constant voltage reference with respect to temp.
+
+A BGR sums a voltage with a negative temperature coefficient (CTAT) and a voltage with a positive temperature coefficient (PTAT). Semiconductor diodes are CTAT: as temperature rises, the voltage across the diode falls. A PTAT circuit cancels that slope, so the sum stays constant over temperature.
+
 <p align="center">
   <img src="Images/BGR_Principle.png">
 </p>
 
-#### 2.1.1 CTAT Voltage Generation
-Usually semiconductor diodes shows CTAT behaviour. If we consider constant current is flowing through a forwrard biased diode, then with increase in temp. we can observe that the voltage across the diode is decreaseing. Generally, it is found that the slope of the V~Temp is -2mV/deg Centigarde.
+### 2.2 CTAT Voltage Generation
+
+For a constant current through a forward-biased diode, the voltage falls with temperature. The slope of V vs temperature is typically about **-2 mV/°C**.
+
 <p align="center">
   <img src="Images/CTAT.png">
 </p>
 
+### 2.3 PTAT Voltage Generation
 
-#### CTAT spice simulation
+The diode current equation has two temperature-dependent parts:
 
-CTAT circuit is simulated under 3 cases 
+- **Thermal voltage V<sub>T</sub>**, directly proportional to temperature (order ~1).
+- **Reverse saturation current I<sub>S</sub>**, which grows strongly with temperature (order ~2.5). Because I<sub>S</sub> sits in the denominator, ln(I<sub>0</sub>/I<sub>S</sub>) falls as temperature rises, which is what makes the diode CTAT.
 
-Case 1 : Constant current source and 1 BJT
-
-<p align="left">
-  <img src="Images/Case - 1 - Slope.png">
-</p>
-
-
-<p align="right">
-  <img src="Images/Case - 1.png">
-</p>
-
-
-
-Inference: It produced a negative slope graph as expected
-
-
-
-
-Case 2 : Constant current source and 8 BJT
-
-
-
-<p align="left">
-  <img src="Images/Case 2 - Slope.png">
-</p>
-
-
-<p align="right">
-  <img src="Images/Case - 2.png">
-</p>
-
-
-Inference: It produced a more negative slope graph than case 1 as current is divided among 8 BJT.
-
-
-
-Case 3 : Variable current source and 1 BJT
-
-
-
-<p align="left">
-  <img src="Images/Case - 3 - Slopes.png">
-</p>
-
-
-<p align="right">
-  <img src="Images/Case - 3.png">
-</p>
-
-
-
-Inference: The slopes gets more negative as the biasing current is decreased, which is similar to increase in BJT.
-
-
-
-
-#### 2.1.2 PTAT Voltage Generation
 <p align="center">
   <img src="Images/Equation.png">
 </p>
 
-From Diode current equation we can find that it has two parts, i.e. 
+To get a PTAT voltage, V<sub>T</sub> has to be separated from I<sub>S</sub>. The circuit below does this with two branches carrying the same current I:
 
-- Vt (Thermal Voltage) which is directly proportional to the temp. (order ~ 1)
-- Is (Reverse saturation current) which is directly proportional to the temp. (order ~ 2.5), as this Is term is in denominator so with increase in temp. the ln(Io/Is) decreases which is responsible for CTAT nature of the diode.
-
-So to get a PTAT Voltage generation circuit we have to find some way such that we can get the Vt separated from Is.
-
-To get Vt separated from Is we can approach in the following way
 <p align="center">
   <img src="Images/PTATCKT.png">
 </p>
 
-In the above circuit same amount of current I is flowing in both the branches. So the node voltage A and B are going to be same V. Now in the B branch if we substract V1 from V, we get Vt independent of Is.
+Because the same current flows in both branches, nodes A and B are at the same voltage V. In branch B, subtracting V<sub>1</sub> from V leaves a term that depends on V<sub>T</sub> only:
+
 <p align="center">
   <img src="Images/PTATEQN.png">
 </p>
-Now
 
 ```
-V= Combined Voltage across R1 and Q2 (CTAT in nature but less sloppy)
-V1= Voltage across Q2 (CTAT in nature but more sloppy)
-V-V1= Voltage across R1 (PTAT in nature)
+V      = combined voltage across R1 and Q2 (CTAT, shallower slope)
+V1     = voltage across Q1 (CTAT, steeper slope)
+V - V1 = voltage across R1 (PTAT)
 ```
-From above we can see that the voltage V-V1 is PTAT in nature, but it's slope is very less as compared to the CTAT, so we have to increase the slope. In order to increase the slope we can use multiple BJTs as diode, so that current per individual diode will be less and it the slope of V-V1 will increase.
+
+The slope of V - V<sub>1</sub> is much smaller than the CTAT slope. To raise it, **N BJTs are used in parallel** as the diode, so the current per BJT is smaller and the difference between the two V<sub>BE</sub> values grows:
+
+$$\Delta V_{BE} = V_T \ln N$$
+
 <p align="center">
   <img src="Images/PTAT.png">
 </p>
 
-#### PTAT spice simulation
+---
 
-To verify the PTAT generation, instead of self-biasing current mirrors, VCVS is used to make the branch currents equeal
+## 3. Self-Biased Current Mirror BGR Architecture
+
+The SBCM-based BGR is built from five blocks:
+
+1. CTAT voltage generation circuit
+2. PTAT voltage generation circuit
+3. Self-biased current mirror circuit
+4. Reference branch circuit
+5. Start-up circuit
+
+### 3.1 CTAT Voltage Generation Circuit
+
+A BJT connected as a diode, which shows the CTAT behaviour described in section 2.
+
+<p align="center">
+  <img src="Images/CTAT1.png">
+</p>
+
+### 3.2 PTAT Voltage Generation Circuit
+
+**N** BJTs connected with a series resistor. The operating principle is described in section 2.3.
+
+<p align="center">
+  <img src="Images/PTAT1.png">
+</p>
+
+### 3.3 Self-Biased Current Mirror
+
+A self-biased current mirror needs no external bias. It biases itself to the desired current without an external reference current.
+
+<p align="center">
+  <img src="Images/currentmirror.png">
+</p>
+
+### 3.4 Reference Branch
+
+The reference branch adds the CTAT and PTAT voltages to give the final reference voltage. It uses a mirror transistor and a BJT connected as a diode. Because of the mirror transistor, the same current flows in the reference branch as in the other branches.
+
+The PTAT branch supplies the PTAT current, and the same current flows through the reference branch. The PTAT voltage slope is much smaller than the CTAT slope, so it has to be amplified. At constant current, V = I·R, so a larger resistance gives a larger voltage slope. Across this larger resistance plus the diode voltage, the output is the sum of the CTAT and PTAT voltages, which is the constant reference voltage:
+
+$$V_{ref} = V_{BE3} + \frac{R_2}{R_1} V_T \ln N$$
+
+<p align="center">
+  <img src="Images/refbranch1.png">
+</p>
+
+### 3.5 Start-Up Circuit
+
+A self-biased mirror has two stable operating points, and one of them is the zero-current state. The start-up circuit pushes a small current through the mirror when the branch currents are zero. This small current disturbs the zero-current state, and the self-biased mirror then settles to its intended current.
+
+<p align="center">
+  <img src="Images/startup.png">
+</p>
+
+### 3.6 Complete BGR Circuit
+
+Connecting all the blocks gives the complete BGR circuit.
+
+<p align="center">
+  <img src="Images/fullbgr.png">
+</p>
+
+### 3.7 Advantages and Limitations
+
+**Advantages of the SBCM BGR**
+
+- Simplest topology
+- Easy to design
+- Always stable
+
+**Limitations**
+
+- Low power supply rejection ratio (PSRR)
+- A cascode design is needed to improve PSRR
+- Voltage headroom issue
+- Needs a start-up circuit
+
+---
+
+## 4. Circuit Design
+
+### 4.1 Design Requirements
+
+<!-- TODO: the simulation netlists use a 2 V supply (vsup dc 2), while this requirement says 1.8 V. Make the two consistent. -->
+
+| Parameter | Target |
+|-----------|--------|
+| Supply voltage | 1.8 V |
+| Temperature range | -40 °C to 125 °C |
+| Power consumption | < 60 µW |
+| Off current | < 2 µA |
+| Start-up time | < 2 µs |
+| Temperature coefficient of V<sub>ref</sub> | < 50 ppm/°C |
+
+### 4.2 Device Selection (from the PDK device data)
+
+**MOSFET**
+
+| Parameter | NFET | PFET |
+|:-:|:-:|:-:|
+| **Type** | LVT | LVT |
+| **Voltage** | 1.8 V | 1.8 V |
+| **Vt0** | ~0.4 V | ~-0.6 V |
+| **Model** | `sky130_fd_pr__nfet_01v8_lvt` | `sky130_fd_pr__pfet_01v8_lvt` |
+
+**BJT (PNP)**
+
+| Parameter | PNP |
+|:-:|:-:|
+| **Current rating** | 1 µA - 10 µA per µm² |
+| **Beta** | ~12 |
+| **Emitter area** | 11.56 µm² |
+| **Model** | `sky130_fd_pr__pnp_05v5_W3p40L3p40` |
+
+**Resistor (high-resistance poly)**
+
+| Parameter | RPOLYH |
+|:-:|:-:|
+| **Sheet resistance** | ~350 Ω |
+| **Tempco** | 2.5 Ω/°C |
+| **Bin widths** | 0.35 µ, 0.69 µ, 1.41 µ, 5.73 µ |
+| **Model** | `sky130_fd_pr__res_high_po` |
+
+### 4.3 Design Calculations
+
+**1. Current budget**
+
+- Maximum power consumption < 60 µW
+- Maximum total current = 60 µW / 1.8 V = 33.33 µA
+- 10 µA per branch is chosen (3 × 10 µA = 30 µA)
+- Start-up current: 1 - 2 µA
+
+**2. Number of BJTs in parallel in branch 2**
+
+- Fewer BJTs need a smaller resistance, but matching suffers.
+- More BJTs need a larger resistance, but give better matching.
+- A moderate number is chosen: **8 BJTs**, for good layout matching and a moderate resistance value.
+
+**3. Calculation of R1**
+
+- R1 = V<sub>T</sub> · ln(8) / I = 26 mV · ln(8) / 10.7 µA ≈ **5 kΩ**
+- R1 unit size: W = 1.41 µm, L = 7.8 µm, unit resistance about 2 kΩ
+- Number of units needed: 2 in series + 2 in parallel (2 + 2 + (2 ‖ 2))
+
+**4. Calculation of R2**
+
+<!-- TODO: with k/q = 86 µV/°C the zero-slope condition gives R2/R1 of about 8.9 (R2 of about 45 kΩ). The 33 kΩ below corresponds to 115 µV/°C. Re-check the number used for the PTAT slope per unit ln(8). -->
+
+- Current through the reference branch: I<sub>3</sub> = I<sub>2</sub> = V<sub>T</sub> · ln(8) / R1
+- Voltage across R2: R2 · I<sub>3</sub> = (R2 / R1) · V<sub>T</sub> · ln(8)
+- Slope of V<sub>R2</sub> = (R2 / R1) · ln(8) · (k/q) per °C
+- Slope of V<sub>BE3</sub> (Q3) ≈ -1.6 mV/°C
+- Adding both slopes and equating to zero gives R2 of about **33 kΩ**
+- Number of units needed: 16 in series + 2 in parallel (2 + 2 + ... + (2 ‖ 2))
+
+**5. SBCM design (self-biased current mirror)**
+
+*A. PMOS in the SBCM*
+
+- Both MP1 and MP2 are kept in saturation.
+- L = 2 µm reduces channel-length modulation.
+- Final size: **L = 2 µ, W = 5 µ, M = 4**
+
+*B. NMOS in the SBCM*
+
+- Both MN1 and MN2 are kept in saturation or deep sub-threshold. This design uses deep sub-threshold.
+- L = 1 µm reduces channel-length modulation.
+- Final size: **L = 1 µ, W = 5 µ, M = 8**
+
+### 4.4 Final Circuit
+
+<p align="center">
+  <img src="Images/finalbgr.png">
+</p>
+
+---
+
+## 5. Pre-Layout Simulation
+
+All simulations use ngspice with the sky130A models (`.lib ... sky130.lib.spice` with the corner name) and a temperature sweep of -40 °C to 125 °C. The netlists are in `bandgap/prelayout/`.
+
+The temperature coefficient is calculated with the box method:
+
+$$TC = \frac{V_{max} - V_{min}}{V_{nom} \cdot (T_{max} - T_{min})} \times 10^{6}\ \text{ppm/°C}$$
+
+### 5.1 CTAT Simulation
+
+The CTAT circuit is simulated in three cases.
+
+**Case 1: constant current source and 1 BJT**
+
+<p align="center">
+  <img src="Images/Case - 1 - Slope.png">
+</p>
+
+<p align="center">
+  <img src="Images/Case - 1.png">
+</p>
+
+*Inference:* the output has a negative slope, as expected.
+
+**Case 2: constant current source and 8 BJTs**
+
+<p align="center">
+  <img src="Images/Case 2 - Slope.png">
+</p>
+
+<p align="center">
+  <img src="Images/Case - 2.png">
+</p>
+
+*Inference:* the slope is more negative than in case 1, because the current is divided among 8 BJTs.
+
+**Case 3: variable current source and 1 BJT**
+
+<p align="center">
+  <img src="Images/Case - 3 - Slopes.png">
+</p>
+
+<p align="center">
+  <img src="Images/Case - 3.png">
+</p>
+
+*Inference:* the slope becomes more negative as the bias current is reduced, which is equivalent to using more BJTs.
+
+### 5.2 PTAT Simulation
+
+To verify PTAT generation, a VCVS is used instead of the self-biased current mirror to force equal branch currents.
 
 <p align="center">
   <img src="Images/I at 27 degree.png">
 </p>
 
-The Image shows that the branch currents are equalized, and the current at 27 deg is 10.95 which is equal the branch current value in the design calculation.
+The branch currents are equalized, and the current at 27 °C is 10.95 µA, which matches the branch current in the design calculation.
 
 <p align="center">
   <img src="Images/PTAT - Slope.png">
 </p>
 
-
-
 <p align="center">
   <img src="Images/PTAT - Graph.png">
 </p>
 
-Therefore, the PTAT is generated by differencing 2 differently biased BJT branches with a slope coefficient of 86 uV/deg C
+*Inference:* the PTAT voltage is generated by differencing two differently biased BJT branches, with a slope of about 86 µV/°C.
 
+### 5.3 BGR with an Ideal Op-Amp
 
-#### Simulation of BGR with Ideal Opamp
+The op-amp is modelled as an ideal VCVS (`bgr_using_ideal_opamp.sp`). This case checks the CTAT and PTAT sum before the self-biased mirror is introduced.
 
 <p align="center">
   <img src="Images/Ideal Case.png">
 </p>
-Inference : BGR circuit with opamp for ideal case
+
 <p align="center">
   <img src="Images/PTAT_CTAT_REF.png">
 </p>
 
-Inference: Voltage of 1.2v is produced at the end of the circuit, which is the silicon's bandgap
-
+*Inference:* a reference of about 1.2 V is produced, which corresponds to the bandgap of silicon.
 
 <p align="center">
   <img src="Images/Umbrella Curve.png">
 </p>
 
-Inference: The BGR based on Ideal Curve gave a accuracy of Approx 19 ppm/deg c Umbrella curve
+*Inference:* the ideal-op-amp BGR has a temperature coefficient of about **19 ppm/°C**, with the typical umbrella curve.
 
-#### Non- Ideal case
+### 5.4 Non-Ideal Case: SBCM BGR over Process Corners
 
-Ideal works fine as the input voltage is in DC mode, but in reality it is transition input. Self biased circuit are stable for 2 state in which zero current state are the most predominate state among them. In order to kick in the circuit initially a start up circuit is needed.
+The ideal case works because the supply is a DC source. In a real circuit the supply ramps up, and a self-biased circuit has two stable states, of which the zero-current state is one. A start-up circuit is therefore needed to kick the circuit into its intended state.
 
-Results: Bandgap Reference over Temperature (-40 °C to 125 °C)
+Corner simulations of the full SBCM BGR (netlists `bgr_lvt_rpolyh_3p40*.sp`):
 
-Process corner simulations
+| Corner | V<sub>ref</sub> variation | V<sub>nom</sub> | TC (ppm/°C) |
+|--------|---------------------------|-----------------|-------------|
+| ff | 2 mV | 1.12 V | 10.8 |
+| tt | 4 mV | 1.08 V | 22.4 |
+| ss | 8 mV | 1.094 V | 44.3 |
 
-| Corner | Vref variation | Vnom | TC (ppm/°C) |
-|--------|----------------|------|-------------|
-| ff     | 2 mV           | 1.12 V  | 10.8 |
-| tt     | 4 mV           | 1.08 V  | 22.4 |
-| ss     | 8 mV           | 1.094 V | 44.3 |
-
+**tt corner**
 
 <p align="center">
   <img src="Images/tt corner.png">
 </p>
 
-
-<p align="center">
-  <img src="Images/ss corner.png">
-</p>
-
-
+**ff corner**
 
 <p align="center">
   <img src="Images/ff corner.png">
 </p>
 
-Inference
+**ss corner**
 
-- Vref follows the expected parabolic ("umbrella") curve. The PTAT term from ΔVbe cancels the CTAT slope of the Vbe near the top of the curve, so the output is nearly flat over a 165 °C range.
-- The temperature coefficient stays below 45 ppm/°C in all three corners. The ff corner is the most stable (about 10.8 ppm/°C) and the ss corner is the least (about 44.3 ppm/°C).
-- The nominal Vref shifts between corners, because device and resistor variation changes the bias current and the ΔVbe term.
+<p align="center">
+  <img src="Images/ss corner.png">
+</p>
+
+### 5.5 Inference
+
+- V<sub>ref</sub> follows the expected parabolic (umbrella) curve. The PTAT term from ΔV<sub>BE</sub> cancels the CTAT slope of V<sub>BE</sub> near the top of the curve, so the output is nearly flat over a 165 °C range.
+- The temperature coefficient stays below 45 ppm/°C in all three corners. The ff corner is the most stable (about 10.8 ppm/°C) and the ss corner the least (about 44.3 ppm/°C).
+- The nominal V<sub>ref</sub> shifts between corners, because device and resistor variation changes the bias current and the ΔV<sub>BE</sub> term.
 - The cancellation is tuned at one corner, so it is not perfect at the others. Trimming the resistor ratio or using a curvature-compensated design would reduce the spread.
 
-### Layout design
+---
 
-Desing choice :
+## 6. Layout Design
 
-by common center matching, to maintain symmetric alignment resistors of R1 and R2 are arranged 
+### 6.1 Layout Strategy
 
-Rbank layout in magic
+- **Common-centroid matching** is used for the resistors R1 and R2, so they are arranged symmetrically.
+- **Dummy components** are added where needed to keep the layout symmetric.
+
+### 6.2 Block Layouts (Magic)
+
+**Resistor bank**
 
 <p align="center">
   <img src="Images/rbank.png">
 </p>
 
-Note : Sometime to maintain the symmetric nature, dummy components are added 
+**NFETs**
+
 <p align="center">
   <img src="Images/nfets.png">
 </p>
+
+**PFETs**
+
 <p align="center">
   <img src="Images/pfets.png">
 </p>
+
+**BJTs**
+
 <p align="center">
   <img src="Images/bjts.png">
 </p>
+
+### 6.3 Top-Level Layout
+
+The `.mag` files of the nfets, pfets, bjts and top cells are shown here.
+
 <p align="center">
   <img src="Images/top.png">
 </p>
-all other .mag file of nfets, pfets , bjts, top file are displayed
 
-commands to extract .ext file from .mag file
+### 6.4 Netlist Extraction
 
+Commands in the Magic console to extract the netlist from the `.mag` file:
+
+```
 extract all
 ext2sim label on
 ext2sim
 ext2spice scale off
 ext2spice hierarchy off
 ext2spice
+```
 
-this extracts all parasitic capacitance and resistance 
+This writes the `.ext`, `.sim`, `.nodes` and `.spice` files.
 
+> **Note:** this command sequence produces a device-level netlist without parasitic R and C. To include parasitic capacitance, enable it before extraction (`extract do all`) and set `ext2spice cthresh 0` before running `ext2spice`.
 
+---
 
+## 7. Verification
 
+### 7.1 LVS (Layout vs Schematic)
 
+*Status: in progress. Results will be added here.*
+
+Steps used:
+
+```
+# In Magic: LVS-friendly netlist
+extract all
+ext2spice lvs
+ext2spice
+
+# In the terminal: compare layout and schematic
+netgen -batch lvs "top.spice top" "top_schematic.spice top" \
+  /opt/pdk/sky130A/libs.tech/netgen/sky130A_setup.tcl comp.out
+tail -30 comp.out
+```
+
+A passing result ends with `Circuits match uniquely`.
+
+### 7.2 Post-Layout Simulation
+
+*Status: pending.* The extracted `top.spice` is simulated in ngspice with a small testbench (supply, temperature sweep) and the result is compared with the pre-layout curve in section 5.4.
+
+---
+
+## 8. Repository Structure and How to Reproduce
+
+### 8.1 Repository Structure
+
+```
+Bandgap_Circuit_Design/
+├── .devcontainer/        # Codespaces environment (Magic, Ngspice, Netgen, sky130A)
+└── bandgap/
+    ├── Images/           # figures used in this README
+    └── prelayout/        # ngspice netlists
+```
+
+**Pre-layout netlists (`bandgap/prelayout/`)**
+
+| File | Content |
+|------|---------|
+| `ctat_voltage_gen.sp` | CTAT generation, 1 BJT |
+| `ctat_voltage_gen_mul_bjt.sp` | CTAT generation, 8 BJTs |
+| `ctat_voltage_gen_var_current.sp` | CTAT generation, variable current |
+| `ptat_voltage_gen.sp`, `ptat_circuit.sp` | PTAT generation |
+| `bgr_using_ideal_opamp.sp` | BGR with an ideal op-amp (VCVS) |
+| `bgr_lvt_rpolyh_3p40.sp`, `_ff.sp`, `_ss.sp` | Full SBCM BGR, tt / ff / ss corners |
+| `bgr_lvt_rpolyh_3p40_var_supply.sp` | Full SBCM BGR with supply variation |
+
+### 8.2 How to Reproduce
+
+1. Fork this repository and open it in a **GitHub Codespace** (Code → Codespaces → Create codespace on main).
+2. In the terminal, run a simulation:
+   ```
+   cd /workspaces/Bandgap_Circuit_Design/bandgap/prelayout
+   ngspice bgr_using_ideal_opamp.sp
+   ```
+3. For the Magic GUI, open the **PORTS** tab, click the forwarded URL of **noVNC Desktop (6080)**, choose `vnc_lite.html`, and start `magic` in the desktop terminal.
+4. In the netlists, the corner is selected in the library line, with the corner name **outside** the quotes:
+   ```
+   .lib "/opt/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" tt
+   ```
+   Replace `tt` with `ff` or `ss` for the other corners.
+
+---
+
+## 9. Summary
+
+| Requirement | Target | Result |
+|-------------|--------|--------|
+| Temperature range | -40 °C to 125 °C | Simulated over the full range |
+| TC of V<sub>ref</sub> | < 50 ppm/°C | 10.8 (ff), 22.4 (tt), 44.3 (ss) ppm/°C |
+| Power consumption | < 60 µW | To be verified |
+| Off current | < 2 µA | To be verified |
+| Start-up time | < 2 µs | To be verified |
+
+The SBCM bandgap reference meets the temperature-coefficient target in all three process corners. LVS and post-layout simulation will complete the verification.
+
+**Reference:** VSD bandgap workshop environment, <https://github.com/vsdip/vsd-bandgap>; SkyWater sky130 PDK.
