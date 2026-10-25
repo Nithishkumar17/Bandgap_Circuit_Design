@@ -501,11 +501,59 @@ This writes the `.ext`, `.sim`, `.nodes` and `.spice` files.
 
 ## 7. Verification
 
-### 7.1 LVS (Layout vs Schematic)
+> Replace each placeholder image below with your own screenshot. Save the screenshots in `Images/` using the file names shown, or change the names in the `<img>` tags.
 
-*Status: in progress. Results will be added here.*
+### 7.1 Extraction Output
 
-Steps used:
+After `extract all` and `ext2spice` in Magic, the top cell has these files: `top.mag`, `top.ext`, `top.spice`, `top.sim` and `top.nodes`. Only `top.spice` is used for LVS and for the extracted simulation.
+
+<p align="center">
+  <img src="Images/extracted_files.png" alt="Placeholder: terminal listing of the extracted top.* files">
+</p>
+
+*Figure: extracted files of the top cell (placeholder).*
+
+### 7.2 DRC (Design Rule Check)
+
+In Magic, with the top cell loaded:
+
+```
+drc check
+drc count
+```
+
+<p align="center">
+  <img src="Images/drc_result.png" alt="Placeholder: Magic console showing the DRC count">
+</p>
+
+*Figure: DRC result of the top cell (placeholder).*
+
+| Item | Result |
+|------|--------|
+| DRC errors in `top` | *fill in* |
+
+### 7.3 LVS (Layout vs Schematic)
+
+**Inputs**
+
+| Netlist | File | Source |
+|---------|------|--------|
+| Layout | `top.spice` | Extracted from `top.mag` with `ext2spice lvs` |
+| Schematic | `top_schematic.spice` | Pre-layout BGR netlist wrapped as `.subckt top vdd gnd vref` |
+
+The schematic netlist for LVS is prepared from the simulation deck:
+
+- The `.lib`, `.global`, `.temp`, `.dc` and `.control` lines and the supply sources are removed.
+- The zero-volt current-measurement sources (`vid1` to `vid5`) are removed, and each pair of nodes is merged into one net.
+- The circuit is wrapped in `.subckt top vdd gnd vref` ... `.ends`, so the ports match the layout.
+
+<p align="center">
+  <img src="Images/lvs_schematic_netlist.png" alt="Placeholder: LVS schematic netlist top_schematic.spice">
+</p>
+
+*Figure: schematic netlist prepared for LVS (placeholder).*
+
+**Commands**
 
 ```
 # In Magic: LVS-friendly netlist
@@ -519,11 +567,89 @@ netgen -batch lvs "top.spice top" "top_schematic.spice top" \
 tail -30 comp.out
 ```
 
-A passing result ends with `Circuits match uniquely`.
+<p align="center">
+  <img src="Images/lvs_command.png" alt="Placeholder: netgen command and output in the terminal">
+</p>
 
-### 7.2 Post-Layout Simulation
+*Figure: netgen run (placeholder).*
 
-*Status: pending.* The extracted `top.spice` is simulated in ngspice with a small testbench (supply, temperature sweep) and the result is compared with the pre-layout curve in section 5.4.
+**Result**
+
+A passing run ends with `Circuits match uniquely`.
+
+<p align="center">
+  <img src="Images/lvs_result_match.png" alt="Placeholder: netgen result showing the circuits match">
+</p>
+
+*Figure: LVS result (placeholder).*
+
+| Check | Result |
+|-------|--------|
+| Device count (layout vs schematic) | *fill in* |
+| Net count (layout vs schematic) | *fill in* |
+| Final result | *fill in: match / mismatch* |
+
+**Points checked while preparing LVS**
+
+| Point | Observation | Resolution |
+|-------|-------------|------------|
+| Resistor bulk | The layout ties the poly-resistor bulk to `gnd` | *fill in: schematic bulk changed to `gnd`* |
+| Resistor length | Extracted `l=7.96`, schematic `l=7.8` | *fill in* |
+| Start-up pfet `xmp6` | The layout connects its source differently from the schematic | *fill in* |
+
+<p align="center">
+  <img src="Images/lvs_mismatch_fix.png" alt="Placeholder: netgen report before and after fixing a mismatch (optional)">
+</p>
+
+*Figure: mismatch report before and after the fix (optional placeholder).*
+
+### 7.4 Post-Layout Simulation
+
+The extracted `top.spice` is simulated in ngspice with a small testbench (`top_sim.sp`) that supplies power, sweeps temperature from -40 °C to 125 °C and measures the temperature coefficient:
+
+```
+.lib "/opt/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" tt
+.include "top.spice"
+
+xtop vdd vref 0 top
+vsup vdd 0 dc 2
+.dc temp -40 125 5
+```
+
+```
+ngspice top_sim.sp
+```
+
+> This netlist has no parasitic R and C unless parasitic extraction was enabled (section 6.4), so it shows the effect of the layout's device sizes only.
+
+<p align="center">
+  <img src="Images/postlayout_vref_plot.png" alt="Placeholder: Vref vs temperature from the extracted netlist">
+</p>
+
+*Figure: V<sub>ref</sub> vs temperature, extracted netlist, tt corner (placeholder).*
+
+<p align="center">
+  <img src="Images/prelayout_vs_postlayout.png" alt="Placeholder: pre-layout and post-layout Vref overlaid">
+</p>
+
+*Figure: pre-layout and post-layout V<sub>ref</sub> compared (placeholder).*
+
+| Metric (tt corner, -40 °C to 125 °C) | Pre-layout | Post-layout (extracted) |
+|--------------------------------------|------------|-------------------------|
+| V<sub>ref</sub> variation | 4 mV | *fill in* |
+| V<sub>nom</sub> | 1.08 V | *fill in* |
+| TC (ppm/°C) | 22.4 | *fill in* |
+
+**Inference:** *fill in after the simulation, for example how close the extracted result is to the pre-layout curve and what causes any difference.*
+
+### 7.5 Verification Summary
+
+| Check | Status |
+|-------|--------|
+| Extraction | Done |
+| DRC | *fill in* |
+| LVS | *fill in* |
+| Post-layout simulation | *fill in* |
 
 ---
 
